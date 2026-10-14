@@ -1,4 +1,4 @@
-"""Shared SEO post-build step for Atulit static prototypes.
+"""Shared SEO post-build step for Atulit static sites.
 Run after the site's HTML exists. Idempotent. Driven by site config (seo_site.py)."""
 import os, re, json, html as H
 from urllib.parse import urljoin, urlparse
@@ -29,10 +29,23 @@ def pages_of(root):
 def load(root, path):
     return BeautifulSoup(open(os.path.join(root, path, "index.html"), encoding="utf-8").read(), "html.parser")
 
+BEACON_SITE = None
+BEACON_DOMAIN = None
+BEACON_TEMPLATE = '<script data-atulit-beacon="__SITE__">\n(function () {\n  if (window.__atulitBeacon) return;\n  window.__atulitBeacon = 1;\n  var site = "__SITE__";\n  var domain = "__DOMAIN__";\n  var idle = 30 * 60 * 1000;\n  var maxAge = 34560000;\n  function read(name) {\n    var parts = document.cookie ? document.cookie.split("; ") : [];\n    for (var i = 0; i < parts.length; i++) {\n      if (parts[i].indexOf(name + "=") === 0) return decodeURIComponent(parts[i].slice(name.length + 1));\n    }\n    return "";\n  }\n  function write(name, value) {\n    document.cookie = name + "=" + encodeURIComponent(value) + "; Path=/; Domain=" + domain + "; Max-Age=" + maxAge + "; SameSite=Lax; Secure";\n  }\n  function uuid() {\n    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();\n    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {\n      var n = Math.random() * 16 | 0;\n      return (c === "x" ? n : (n & 3 | 8)).toString(16);\n    });\n  }\n  var visitor = read("atulit_vid");\n  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(visitor)) visitor = uuid();\n  write("atulit_vid", visitor);\n  if (read("atulit_vid") !== visitor) return;\n  var now = Date.now();\n  var raw = read("atulit_sid");\n  var dot = raw.lastIndexOf(".");\n  var visit = dot > 0 ? raw.slice(0, dot) : "";\n  var last = dot > 0 ? parseInt(raw.slice(dot + 1), 10) || 0 : 0;\n  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(visit) || now - last > idle) visit = uuid();\n  write("atulit_sid", visit + "." + now);\n  var path = location.pathname || "/";\n  if (path.charAt(0) !== "/") path = "/" + path;\n  var body = JSON.stringify({ site: site, path: path, visitor: visitor, visit: visit });\n  var url = "https://analytics.atulitllc.com/collect";\n  try {\n    if (navigator.sendBeacon) {\n      navigator.sendBeacon(url, new Blob([body], { type: "text/plain;charset=UTF-8" }));\n      return;\n    }\n  } catch (e) {}\n  fetch(url, { method: "POST", mode: "cors", keepalive: true, headers: { "content-type": "text/plain;charset=UTF-8" }, body: body }).catch(function () {});\n})();\n</script></body>'
+
+def add_beacon(s):
+    """First-party Atulit analytics beacon (analytics.atulitllc.com), one per page."""
+    if not BEACON_SITE: return s
+    s = re.sub(r'<script data-atulit-beacon="[^"]*">.*?</script>\s*', "", s, flags=re.S)
+    tag = BEACON_TEMPLATE.replace("__DOMAIN__", BEACON_DOMAIN).replace("__SITE__", BEACON_SITE)
+    i = s.lower().rfind("</body>")
+    return s[:i] + tag + "\n" + s[i:] if i >= 0 else s + tag
+
 def save(root, path, soup, name="index.html"):
     os.makedirs(os.path.join(root, path), exist_ok=True)
     s = str(soup)
     if not s.lower().startswith("<!doctype"): s = "<!doctype html>" + s
+    s = add_beacon(s)
     open(os.path.join(root, path, name), "w", encoding="utf-8").write(s)
 
 def h1_text(soup):
@@ -122,11 +135,14 @@ def fix_images(site, path, soup):
         img["decoding"] = "async"
 
 def run(site):
+    global BEACON_SITE, BEACON_DOMAIN
+    BEACON_DOMAIN = site.apex
+    BEACON_SITE = getattr(site, "beacon_site", None) or site.apex.split(".")[0]
     root = site.root; hook = site.hook or (lambda ctx: {})
     # 1. standard pages
     std = {
-      "privacy/": ("Privacy policy", f"<h1>Privacy policy</h1><p>Last updated {site.updated}.</p><p>{site.brand} is a prototype by Atulit LLC. It has no user accounts, no analytics and no advertising trackers.</p><p>Some features save small preferences or form entries in your browser's local storage. That data stays on your device and is never sent to us. You can clear it at any time in your browser settings.</p><p>Outbound links, including affiliate links marked sponsored, take you to other sites with their own privacy policies.</p><p>Questions: see our <a href=\"../contact/\">contact page</a>.</p>"),
-      "contact/": ("Contact", f"<h1>Contact {H.escape(site.brand)}</h1><p>Last updated {site.updated}.</p><p>{site.brand} is run by Atulit LLC. This is an early prototype and a public contact inbox is not set up yet.</p><p>When it is, the address will be listed here. Until then, you can read <a href=\"../about/\">about us</a> and our <a href=\"../privacy/\">privacy policy</a>.</p>"),
+      "privacy/": ("Privacy policy", f"<h1>Privacy policy</h1><p>Last updated {site.updated}.</p><p>{site.brand} is run by Atulit. It has no user accounts and no advertising.</p><p>We use first-party, cookie-based page view analytics: two cookies, atulit_vid (a random visitor id) and atulit_sid (a random visit id that resets after 30 minutes of inactivity), record which pages are viewed. The data goes only to our own analytics server. There are no ads and no third-party trackers.</p><p>Some features save small preferences or form entries in your browser's local storage. That data stays on your device and is never sent to us. You can clear it at any time in your browser settings.</p><p>Outbound links, including affiliate links marked sponsored, take you to other sites with their own privacy policies.</p><p>Questions: see our <a href=\"../contact/\">contact page</a>.</p>"),
+      "contact/": ("Contact", f"<h1>Contact {H.escape(site.brand)}</h1><p>Last updated {site.updated}.</p><p>{site.brand} is run by Atulit. A public contact inbox is not set up yet.</p><p>When it is, the address will be listed here. Until then, you can read <a href=\"../about/\">about us</a> and our <a href=\"../privacy/\">privacy policy</a>.</p>"),
     }
     for p, (t, b) in std.items():
         f = os.path.join(root, p, "index.html")

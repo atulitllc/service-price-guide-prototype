@@ -33,7 +33,6 @@ def page(path,title,desc,body,crumbs,extra_ld=[],gate=None):
     h=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{esc(title)} | {BR}</title><meta name="description" content="{esc(desc)}"><meta name="robots" content="noindex, nofollow">{THEME_HEAD}{gm}
 <link rel="canonical" href="{url}"><link rel="icon" href="{rel}img/brand/option-b-icon.svg" type="image/svg+xml"><link rel="icon" href="{rel}img/brand/option-b-icon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="{rel}img/brand/option-b-icon-180.png"><link rel="stylesheet" href="{rel}assets/site.css">{lds}</head><body>
-<div class="banner">Prototype. Figures come from BLS wage data and HomeAdvisor cost guides, with sources on each page. Estimates, not quotes. Nothing you enter is sent.</div>
 <header class="top"><div class="wrap nav"><a class="logo" href="{rel}"><img src="{rel}img/brand/option-b-wordmark.svg" alt="CityRateBook" height="30"></a>
 <nav><a href="{rel}#services">{icon("wrench",16)}Services</a><a href="{rel}#cities">{icon("map-pin",16)}Cities</a><a href="{rel}methodology/">{icon("calculator",16)}How we estimate</a><a class="btn sm" href="{rel}plumbers/cost/boston-ma/#quote">{icon("receipt",16)}Get quotes</a>{toggle()}</nav></div></header>
 <main>{'' if path=='' else f'<div class="wrap crumbs">{cr}</div>'}{body}</main>
@@ -58,7 +57,7 @@ def faq(qs):
     return '<section class="faq"><h2>Frequently asked questions</h2>'+"".join(f"<details><summary>{q}</summary><p>{a}</p></details>" for q,a in qs)+"</section>",ld
 def quote(rel,svc="",city=""):
     opts="".join(f'<option value="{k}"{" selected" if k==svc else ""}>{v[0]}</option>' for k,v in S.items())
-    return f'''<section class="quote" id="quote"><div class="qhead"><h2>Get up to 3 local quotes</h2><p>Free, about a minute. Prototype only: saved in your browser, nothing is sent.</p>
+    return f'''<section class="quote" id="quote"><div class="qhead"><h2>Get up to 3 local quotes</h2><p>Free, about a minute. Your request stays in this browser for now; nothing is sent.</p>
 <ol class="steps"><li class="on">Service</li><li>Timing</li><li>Details</li><li>Contact</li></ol></div>
 <form class="qform" novalidate data-city="{city}">
 <fieldset class="step on"><label>Service<select name="service">{opts}</select></label><label>ZIP code<input name="zip" inputmode="numeric" maxlength="5" placeholder="e.g. 02118" required pattern="[0-9]{{5}}"></label></fieldset>
@@ -69,7 +68,7 @@ def quote(rel,svc="",city=""):
 <p class="legal">We collect your service, ZIP, timing, details, and contact info and share them only with up to 3 matched providers. By checking the box and submitting, you agree that those providers may contact you by email, and if you add a phone number, by call or text, including automated means, at the number provided. Consent is not a condition of purchase. Message and data rates may apply; reply STOP to opt out. See our <a href="{rel}privacy/">Privacy policy</a>.</p></fieldset>
 <p class="err" role="alert"></p>
 <div class="qnav"><button type="button" class="btn ghost back" hidden>Back</button><button type="button" class="btn next">Continue</button></div></form>
-<div class="success" hidden><div class="check">✓</div><h3>Request saved</h3><p>In the real product, up to 3 local pros would reach out. In this prototype, your request is stored in this browser only (localStorage) and was not sent anywhere.</p><button class="btn ghost again" type="button">Start a new request</button></div></section>'''
+<div class="success" hidden><div class="check">✓</div><h3>Request saved</h3><p>Your request stays in this browser for now (localStorage); nothing is sent.</p><button class="btn ghost again" type="button">Start a new request</button></div></section>'''
 
 # ===== Real data (fetched Oct 13, 2026) =====
 BLS=json.load(open(f"{R}/data/bls_oews.json"))
@@ -135,7 +134,7 @@ for k in S:
     fh,fld=faq(qs)
     body=f'''<section class="wrap phead">{tile(k,"lg")}<div><span class="kicker">{cn}, {st}</span><h1>{name} Cost in {cn}, {st} (2026 Estimates)</h1><p class="lede">Local wage data from BLS, plus the national job cost range. Checked {D}.</p></div></section>
 <section class="wrap two"><div class="panel"><h3>What {name.lower()} earn in the {cn} metro</h3>{wagebox(c,k,rel,cn+" metro area")}<div class="cmp"><div><small>{cn} median</small><b>{w(bl)}/hr</b></div><div><small>National median</small><b>{w(bn)}/hr</b></div><div><small>Difference</small><b class="{'up' if diff>=0 else 'down'}">{'+' if diff>=0 else ''}{diff}%</b></div></div></div>
-<div class="panel"><h3>National job cost</h3>{hab(k,rel)}<p class="gate">Index gate: {len(P)} local data points (BLS wage percentiles). {"Meets the 3 point minimum" if ok else "Below 3, noindex"}. Prototype stays noindex.</p></div></section>
+<div class="panel"><h3>National job cost</h3>{hab(k,rel)}<p class="gate">Based on {len(P)} local data points (BLS wage percentiles).</p></div></section>
 <section class="wrap">{fh}</section><section class="wrap">{quote(rel,k,c)}</section>'''
     gates.append((f"{k}/{c}",len(P),ok))
     page(f"{k}/cost/{c}/",f"{name} Cost in {cn}, {st} (2026 Estimates)",f"{name} wages in {cn} from BLS, plus national cost range.",body,[("Home",""),(f"{name} cost",f"{k}/cost/"),(f"{cn}, {st}",f"{k}/cost/{c}/")],[fld],gate=f"points={len(P)};pass={ok}")
@@ -153,10 +152,10 @@ page("methodology/","Methodology: How We Estimate Prices","Methodology and sourc
 <p>We publish only figures we can cite, each with a link and a check date.</p><h2>Sources</h2><ul class="sources">
 <li><b>US Bureau of Labor Statistics, OEWS (May 2025 data).</b> Hourly wage 10th percentile, median and 90th percentile, nationally and for the Boston, Austin and Denver metro areas, pulled from the free <a href="{BLS_API}" rel="nofollow">BLS public API</a>. These are worker wages, not customer prices. <a href="{BLS_URL}" rel="nofollow">bls.gov/oes</a></li>
 <li><b>HomeAdvisor cost guides</b> for plumbers, electricians, HVAC repair, house cleaning and handyman work. National ranges only, labeled Estimate, with attribution. {"".join(f'<a href="{v[0]}" rel="nofollow">{k}</a> ' for k,v in HA.items())}</li></ul>
-<h2>Index rule</h2><p>A city page needs at least 3 real local data points before it can be indexed. Today every city page has 3 local BLS wage points. The whole prototype stays noindex.</p>
+<h2>Index rule</h2><p>A city page needs at least 3 real local data points before it can be indexed. Today every city page has 3 local BLS wage points.</p>
 <h2>Gaps</h2><p>We have no free, citable local job price data for any city, and no national job cost guide yet for movers, painters or pet sitters.</p></section>''',[("Home",""),("Methodology","methodology/")])
 
-page("privacy/","Privacy","Privacy policy.",f'''<section class="wrap prose"><h1>Privacy policy</h1><p class="est">Last updated {D} · prototype draft</p><h2>What we collect</h2><p>When you request quotes: service, ZIP, timing, job details, name, email and optional phone.</p><h2>Who we share it with</h2><p>Up to 3 matched local service providers, only after you check the consent box.</p><h2>Calls and texts</h2><p>If you give a phone number and consent, matched providers may call or text you, including by automated means. Consent is not a condition of purchase. Reply STOP to opt out.</p><h2>This prototype</h2><p>Nothing is sent. Requests are stored in your browser's localStorage and you can clear them anytime.</p><button class="btn ghost" onclick="localStorage.removeItem('rw_quotes');this.textContent='Cleared'">Clear my saved requests</button></section>''',[("Home",""),("Privacy","privacy/")])
+page("privacy/","Privacy","Privacy policy.",f'''<section class="wrap prose"><h1>Privacy policy</h1><p class="est">Last updated {D}</p><p>{BR} is run by Atulit.</p><h2>Analytics</h2><p>We use first-party, cookie-based page view analytics: two cookies, atulit_vid (a random visitor id) and atulit_sid (a random visit id), record which pages are viewed and are sent only to our own analytics server. No ads and no third-party trackers.</p><h2>What we collect</h2><p>When you request quotes: service, ZIP, timing, job details, name, email and optional phone.</p><h2>Who we share it with</h2><p>Up to 3 matched local service providers, only after you check the consent box.</p><h2>Calls and texts</h2><p>If you give a phone number and consent, matched providers may call or text you, including by automated means. Consent is not a condition of purchase. Reply STOP to opt out.</p><h2>Your requests</h2><p>Nothing is sent. Requests are stored in your browser's localStorage and you can clear them anytime.</p><button class="btn ghost" onclick="localStorage.removeItem('rw_quotes');this.textContent='Cleared'">Clear my saved requests</button></section>''',[("Home",""),("Privacy","privacy/")])
 page("about/","About","About.",f'''<section class="wrap prose"><h1>About {BR}</h1><p class="est">Last updated {D}</p><p>{BR} by Atulit publishes local price information for everyday home services, using only figures we can cite.</p><h2>How we are funded</h2><p>Planned: matched quote requests and clearly labeled affiliate partners. No ads.</p></section>''',[("Home",""),("About","about/")])
 # cities hub
 cl="".join(f'<a class="card city sm" href="{c}/"><h3>{v[0]}, {v[1]}</h3><p>Home service cost estimates</p></a>' for c,v in C.items())
