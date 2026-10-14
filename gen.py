@@ -31,7 +31,7 @@ def page(path,title,desc,body,crumbs,extra_ld=[],gate=None):
 <title>{esc(title)} | {BR}</title><meta name="description" content="{esc(desc)}"><meta name="robots" content="noindex, nofollow">{gm}
 <link rel="canonical" href="{url}"><link rel="icon" href="{rel}img/brand/option-b-icon.svg" type="image/svg+xml"><link rel="icon" href="{rel}img/brand/option-b-icon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="{rel}img/brand/option-b-icon-180.png"><link rel="stylesheet" href="{rel}assets/site.css">{lds}</head><body>
 <div class="banner">Prototype. Figures come from BLS wage data and HomeAdvisor cost guides, with sources on each page. Estimates, not quotes. Nothing you enter is sent.</div>
-<header class="top"><div class="wrap nav"><a class="logo" href="{rel}"><img src="{rel}img/brand/option-b-wordmark.svg" alt="CityRateBook" height="30"><small>by Atulit</small></a>
+<header class="top"><div class="wrap nav"><a class="logo" href="{rel}"><img src="{rel}img/brand/option-b-wordmark.svg" alt="CityRateBook" height="30"></a>
 <nav><a href="{rel}#services">Services</a><a href="{rel}#cities">Cities</a><a href="{rel}methodology/">How we estimate</a><a class="btn sm" href="{rel}plumbers/cost/boston-ma/#quote">Get quotes</a></nav></div></header>
 <main>{'' if path=='' else f'<div class="wrap crumbs">{cr}</div>'}{body}</main>
 <footer><div class="wrap fgrid"><div><a class="logo" href="{rel}"><img src="{rel}img/brand/option-b-wordmark.svg" alt="CityRateBook" height="28"></a><p>Local service price guides. Funded by matched quote requests and sponsored partner links, never by what a price says.</p><p class="muted">Last updated {D}</p></div>
