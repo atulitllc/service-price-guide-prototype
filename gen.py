@@ -1,5 +1,8 @@
 import os,json,re
 R=os.path.dirname(os.path.abspath(__file__)); D="Oct 13, 2026"; BR="CityRateBook"
+import sys; sys.path.insert(0,R)
+from atulit_gfx import icon,flogo,hero,THEME_HEAD,toggle,CREDIT,install_css
+SI={"plumbers":"wrench","electricians":"zap","movers":"truck","house-cleaners":"sparkles","pet-sitters":"paw-print","hvac":"thermometer","handyman":"hammer","painters":"paintbrush"}
 S={ # slug:(name,unit,lo,hi,mid,jobs,factors,icon,color)
 "plumbers":("Plumbers","per job",150,450,275,[("Fix a leaky faucet",125,250),("Unclog a drain",150,350),("Replace a toilet",350,800),("Water heater install",1200,3200),("Repipe a bathroom",1500,4500)],["Emergency or after-hours calls","Pipe access behind walls or floors","Fixture and part quality","Permit needs for gas or water heaters"],"PL","#2563eb"),
 "electricians":("Electricians","per job",160,520,310,[("Replace an outlet",120,260),("Install a ceiling fan",180,450),("Add a dedicated circuit",350,900),("EV charger install",800,2200),("Panel upgrade to 200A",1800,4500)],["Panel capacity and age","Wire runs through finished walls","Permit and inspection fees","Licensed master vs journeyman rates"],"EL","#d97706"),
@@ -28,19 +31,19 @@ def page(path,title,desc,body,crumbs,extra_ld=[],gate=None):
     gm=f'<meta name="x-index-gate" content="{gate}">' if gate else ""
     cr="".join((f'<a href="{rel}{u}">{esc(n)}</a><span>/</span>' if i<len(crumbs)-1 else f'<b>{esc(n)}</b>') for i,(n,u) in enumerate(crumbs))
     h=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{esc(title)} | {BR}</title><meta name="description" content="{esc(desc)}"><meta name="robots" content="noindex, nofollow">{gm}
+<title>{esc(title)} | {BR}</title><meta name="description" content="{esc(desc)}"><meta name="robots" content="noindex, nofollow">{THEME_HEAD}{gm}
 <link rel="canonical" href="{url}"><link rel="icon" href="{rel}img/brand/option-b-icon.svg" type="image/svg+xml"><link rel="icon" href="{rel}img/brand/option-b-icon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="{rel}img/brand/option-b-icon-180.png"><link rel="stylesheet" href="{rel}assets/site.css">{lds}</head><body>
 <div class="banner">Prototype. Figures come from BLS wage data and HomeAdvisor cost guides, with sources on each page. Estimates, not quotes. Nothing you enter is sent.</div>
 <header class="top"><div class="wrap nav"><a class="logo" href="{rel}"><img src="{rel}img/brand/option-b-wordmark.svg" alt="CityRateBook" height="30"></a>
-<nav><a href="{rel}#services">Services</a><a href="{rel}#cities">Cities</a><a href="{rel}methodology/">How we estimate</a><a class="btn sm" href="{rel}plumbers/cost/boston-ma/#quote">Get quotes</a></nav></div></header>
+<nav><a href="{rel}#services">{icon("wrench",16)}Services</a><a href="{rel}#cities">{icon("map-pin",16)}Cities</a><a href="{rel}methodology/">{icon("calculator",16)}How we estimate</a><a class="btn sm" href="{rel}plumbers/cost/boston-ma/#quote">{icon("receipt",16)}Get quotes</a>{toggle()}</nav></div></header>
 <main>{'' if path=='' else f'<div class="wrap crumbs">{cr}</div>'}{body}</main>
-<footer><div class="wrap fgrid"><div><a class="logo" href="{rel}"><img src="{rel}img/brand/option-b-wordmark.svg" alt="CityRateBook" height="28"></a><p>Local service price guides. Funded by matched quote requests and sponsored partner links, never by what a price says.</p><p class="muted">Last updated {D}</p></div>
+<footer><div class="wrap fgrid"><div><a class="logo" href="{rel}"><img src="{rel}img/brand/option-b-wordmark.svg" alt="CityRateBook" height="28"></a><p>Local service price guides. Funded by matched quote requests and sponsored partner links, never by what a price says.</p><p class="muted">Last updated {D}</p><p class="muted credit">{CREDIT}</p></div>
 <div><b>Guides</b>{''.join(f'<a href="{rel}{k}/cost/">{v[0]}</a>' for k,v in list(S.items())[:4])}</div><div><b>Cities</b>{''.join(f'<a href="{rel}cities/{k}/">{v[0]}, {v[1]}</a>' for k,v in C.items())}</div>
 <div><b>Company</b><a href="{rel}about/">About</a><a href="{rel}methodology/">How we estimate</a><a href="{rel}privacy/">Privacy</a></div></div></footer>
 <script src="{rel}assets/site.js"></script></body></html>'''
     assert "\u2013" not in h and "\u2014" not in h, path
     os.makedirs(f"{R}/{path}",exist_ok=True); open(f"{R}/{path}index.html","w").write(h)
-def tile(k,size=""):return f'<span class="tile {size}" style="--c:{S[k][8]}">{S[k][7]}</span>'
+def tile(k,size=""):return f'<span class="tile {size}" style="--c:{S[k][8]}" title="{S[k][0]}">{icon(SI[k],30 if size=="lg" else 21)}</span>'
 def est(rel,src="Sources"):return f'<span class="est">Estimate, last checked {D} · <a href="{rel}methodology/">{src}</a></span>'
 def bar(lo,hi,mid,scale_lo,scale_hi,label="Typical range",nat=None):
     p=lambda x:max(0,min(100,(x-scale_lo)/(scale_hi-scale_lo)*100))
@@ -94,14 +97,14 @@ def hab(k,rel):
     return f'''{b}<p class="small">{n}</p><span class="est">Estimate, national. Source: <a href="{u}" rel="nofollow">HomeAdvisor cost guide</a> (updated Jun 19, 2026), checked {D}</span>'''
 # HOME
 rel=""
-body=f'''<section class="hero"><div class="wrap"><span class="kicker">Real sources · last checked {D}</span><h1>Know what it should cost<br><span class="grad">before you call a pro.</span></h1>
+body=f'''<section class="hero"><div class="wrap hs"><div><span class="kicker">{icon("badge-check",15)} Real sources · last checked {D}</span><h1>Know what it should cost<br><span class="grad">before you call a pro.</span></h1>
 <p class="lede">National job cost ranges from published cost guides, plus what local workers earn from US Bureau of Labor Statistics data. Every figure links to its source.</p>
-<div class="stats"><div><b>{len(S)}</b>services</div><div><b>{len(C)}</b>cities</div><div><b>{len(HA)}</b>national cost guides</div></div></div></section>
-<section class="wrap" id="services"><div class="sh"><h2>Services</h2><a href="methodology/">How we estimate</a></div><div class="grid4">
-{''.join(f'<a class="card svc" href="{k}/cost/">{tile(k)}<h3>{v[0]}</h3><p class="rng">{(m(HA[k][1])+" to "+m(HA[k][2])) if k in HA else "Median wage "+w(bls("national",k)["median"]["value"])+"/hr"}</p><span class="est">{"Estimate, HomeAdvisor" if k in HA else "BLS wage data"}, {D}</span></a>' for k,v in S.items())}</div></section>
-<section class="wrap" id="cities"><div class="sh"><h2>Cities</h2></div><div class="grid3">
-{''.join(f'<a class="card city" href="cities/{k}/"><div class="cimg c{i}"><b>{v[1]}</b></div><h3>{v[0]}, {v[1]}</h3><p>Local wage data for {len(S)} trades</p></a>' for i,(k,v) in enumerate(C.items()))}</div></section>
-<section class="wrap how"><div><h2>Ranges, not guesses</h2><p>We only publish figures we can cite. Job prices are national estimates from published cost guides. Local figures are BLS wage data for the workers who do the job. Where we have no source, we show nothing.</p><a class="btn ghost" href="methodology/">Read our methodology</a></div></section>'''
+<div class="stats"><div><b>{len(S)}</b>services</div><div><b>{len(C)}</b>cities</div><div><b>{len(HA)}</b>national cost guides</div></div></div><div>{hero("cityratebook")}</div></div></section>
+<section class="wrap" id="services"><div class="sh"><h2 class="secdeco" style="--c:#14532D"><span class="ibadge soft">{icon("wrench",20)}</span>Services</h2><a href="methodology/">How we estimate</a></div><div class="grid4">
+{''.join(f'<a class="card svc" href="{k}/cost/">{tile(k)}<h3>{v[0]}</h3><p class="rng">{icon("dollar-sign",16,"ic pr")}{(m(HA[k][1])+" to "+m(HA[k][2])) if k in HA else "Median wage "+w(bls("national",k)["median"]["value"])+"/hr"}</p><span class="est">{icon("badge-check",13)} {"Estimate, HomeAdvisor" if k in HA else "BLS wage data"}, {D}</span></a>' for k,v in S.items())}</div></section>
+<section class="wrap" id="cities"><div class="sh"><h2 class="secdeco" style="--c:#D9A21B"><span class="ibadge soft">{icon("map-pin",20)}</span>Cities</h2></div><div class="grid3">
+{''.join(f'<a class="card city" href="cities/{k}/"><div class="cimg c{i}">{icon("building-2",64,"ic sky")}<b>{v[1]}</b></div><h3>{v[0]}, {v[1]}</h3><p>{icon("map-pin",15)} Local wage data for {len(S)} trades</p></a>' for i,(k,v) in enumerate(C.items()))}</div></section>
+<section class="wrap how"><div><span class="ibadge lg" style="--c:#14532D">{icon("scale",30)}</span><h2>Ranges, not guesses</h2><p>We only publish figures we can cite. Job prices are national estimates from published cost guides. Local figures are BLS wage data for the workers who do the job. Where we have no source, we show nothing.</p><a class="btn ghost" href="methodology/">Read our methodology</a></div></section>'''
 page("","Local service price guides","Home service cost ranges and local wage data, with sources.",body,[("Home","")])
 # SERVICE HUBS
 for k,v in S.items():
@@ -160,4 +163,12 @@ cl="".join(f'<a class="card city sm" href="{c}/"><h3>{v[0]}, {v[1]}</h3><p>Home 
 page("cities/","Home Service Costs by City (2026 Estimates)","Cities.",f'<section class="wrap phead"><div><h1>Home Service Costs by City (2026 Estimates)</h1><p class="lede">Pick a city to see local estimate ranges for home services, with sources and the date we last checked.</p></div></section><section class="wrap"><div class="grid3">{cl}</div></section>',[("Home",""),("Cities","cities/")])
 json.dump({g[0]:g[2] for g in gates},open(R+"/.index-gate.json","w"))
 print("INDEX GATE", sum(g[2] for g in gates), "of", len(gates))
+install_css(f"{R}/assets/site.css",""".hs{display:grid;grid-template-columns:1.15fr 1fr;gap:30px;align-items:center}.kicker .ic{vertical-align:-.15em}
+.nav nav a .ic{width:16px;height:16px}.nav nav .btn .ic{opacity:1}.thm{margin-left:0}
+.rng{display:flex;align-items:center;gap:4px}.rng .ic.pr{color:#D9A21B}.est .ic{color:#16a34a;vertical-align:-.15em}
+.cimg{position:relative;overflow:hidden}.cimg .sky{position:absolute;right:10px;top:10px;opacity:.28;color:#fff;width:84px;height:84px}
+.card.city p .ic{color:#D9A21B}.how .ibadge{margin-bottom:6px}.credit{font-size:12px}.credit a{display:inline!important;text-decoration:underline}
+@media(max-width:820px){.hs{grid-template-columns:1fr}.hs .hero-gfx{max-width:320px}}
+html[data-theme=dark] .banner{background:#1a1e26;color:#cbd5e1}
+""")
 import sys; sys.path.insert(0,R); import seo_site; seo_site.build()
