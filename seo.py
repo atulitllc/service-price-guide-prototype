@@ -303,6 +303,18 @@ def run(site):
     lg = Image.open(site.og_logo).convert("RGBA"); lg.thumbnail((960, 320))
     og.paste(lg, ((1200 - lg.width) // 2, (630 - lg.height) // 2), lg)
     og.save(os.path.join(root, "img/og.png"), optimize=True)
+    # root favicon.ico (16/32/48); keep across regenerations
+    fav_src = os.path.join(root, "img/brand/favicon-32.png")
+    if not os.path.exists(fav_src):
+        for alt in ("option-b-icon-32.png", "icon-512.png", "option-b-icon-512.png", "favicon.svg"):
+            cand = os.path.join(root, "img/brand", alt)
+            if os.path.exists(cand) and not alt.endswith(".svg"):
+                fav_src = cand; break
+    if os.path.exists(fav_src):
+        src = Image.open(fav_src).convert("RGBA")
+        sizes = [(16, 16), (32, 32), (48, 48)]
+        frames = [src.resize(s, Image.Resampling.LANCZOS) for s in sizes]
+        frames[-1].save(os.path.join(root, "favicon.ico"), format="ICO", sizes=sizes, append_images=frames[:-1])
     print(f"[{site.brand}] pages={len(report)} indexable_candidates={len(entries)} sitemap={'written' if site.indexable else 'not written (INDEXABLE=False)'}")
     bad = [r_ for r_ in report if not (140 <= r_["dl"] <= 160) or r_["tl"] > 66 or r_["h1"] != 1]
     for b in bad: print("  CHECK", b)
