@@ -34,6 +34,6 @@ def build():
     site = seo.Site(ROOT, "CityRateBook", "cityratebook.com", "service-price-guide-prototype", INDEXABLE, "Oct 13, 2026", "2026-10-13",
         "Local service price guides. Funded by matched quote requests and sponsored partner links, never by what a price says.",
         f"{LOGOS}/option-b-wordmark-1200.png", "img/brand/option-b-icon-512.png",
-        ["Sample estimates, not quotes.", "Last checked Oct 13, 2026.", "From CityRateBook.", "Ranges with sources.", "Free local quotes."], hook)
+        ["Estimates from cited sources, not quotes.", "Last checked Oct 13, 2026.", "From CityRateBook.", "Ranges with sources.", "Free local quotes."], hook)
     return seo.run(site)
 if __name__ == "__main__": build()
