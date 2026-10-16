@@ -10,6 +10,7 @@ def hook(ctx):
     p, s, paths = ctx["path"], ctx["soup"], ctx["paths"]
     seg = p.strip("/").split("/") if p else []
     h1 = ctx["h1"]
+    if p == "contact/": return dict(titles=[h1], index=False)  # thin: no contact inbox yet
     if p == "": return dict(titles=["Local Home Service Price Guides (2026 Estimates)", "Local Home Service Price Guides"])
     if len(seg) == 3 and seg[1] == "cost":
         g = s.find("meta", attrs={"name": "x-index-gate"})
